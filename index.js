@@ -25,7 +25,7 @@ async function weather(message, place) {
 
 async function forecast(message, place) {
   const response = await fetch(
-    `http://api.weatherapi.com/v1/forecast.json?key=475265a284714c098dd132830221401&q=${place}&days=3&aqi=yes&alerts=yes`
+    `http://api.weatherapi.com/v1/forecast.json?key=${api_weather}&q=${place}&days=3&aqi=yes&alerts=yes`
   );
   const data = await response.json();
   for (let i = 0; i < 3; i++) {
