@@ -1,18 +1,25 @@
+// Getting important functionality to call API in Javascript
+
 const fetch = require("node-fetch");
 const Discord = require("discord.js");
 const config = require("./config.json");
 const bot = new Discord.Client({ intents: ["GUILDS", "GUILD_MESSAGES"] });
 
+// Weather API key
 const api_weather = config.WEATHER_API_KEY;
+const prefix = "!";
 
+// used to get weather functionality
 async function weather(message, place) {
   const response = await fetch(
     `http://api.weatherapi.com/v1/current.json?key=${api_weather}&q=${place}&aqi=yes`
   );
+
   if (!response.ok) {
     message.reply("Please enter a nearby town.");
     return;
   }
+
   const data = await response.json();
   let temp = data.current.temp_c;
   let location = data.location.name + ", " + data.location.region;
@@ -23,10 +30,18 @@ async function weather(message, place) {
   );
 }
 
+// Used for forecast functionaloity
 async function forecast(message, place) {
   const response = await fetch(
     `http://api.weatherapi.com/v1/forecast.json?key=${api_weather}&q=${place}&days=3&aqi=yes&alerts=yes`
   );
+  
+  if(!response.ok)
+  {
+    message.reply("Please enter a nearbuy town.");
+    return;
+  }
+
   const data = await response.json();
   for (let i = 0; i < 3; i++) {
     let final_reply="";
@@ -38,8 +53,9 @@ async function forecast(message, place) {
   }
 }
 
-const prefix = "!";
 
+
+// When User puts a message, this is initiated
 bot.on("messageCreate", function (message) {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
@@ -57,4 +73,5 @@ bot.on("messageCreate", function (message) {
   } else message.reply("Enter a valid command");
 });
 
+// To login the bot into Discord server
 bot.login(config.BOT_TOKEN);
