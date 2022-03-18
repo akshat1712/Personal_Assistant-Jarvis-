@@ -72,11 +72,7 @@ async function bnews_country( message,country = "in", category = "general") {
     reply_news=reply_news.concat(`${i+1}: `);
     reply_news=reply_news.concat(data.articles[i].title).concat('\n\n');
 
-    reply_news=reply_news.concat( data.articles[i].description).concat('...\n\n');
-    // if( data.articles[i].content!=null)
-    // {
-    //   reply_news=reply_news.concat(data.articles[i].content.substring(0,1500)).concat("\n\n");
-    // } 
+    reply_news=reply_news.concat( data.articles[i].description).concat('...\n\n'); 
   }
   message.reply(reply_news);
 }
