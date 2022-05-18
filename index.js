@@ -72,7 +72,29 @@ async function bnews_country( message,country = "in", category = "general") {
     reply_news=reply_news.concat(`${i+1}: `);
     reply_news=reply_news.concat(data.articles[i].title).concat('\n\n');
 
-    reply_news=reply_news.concat( data.articles[i].description).concat('...\n\n'); 
+    if( data.articles[i].description!=null)
+        reply_news=reply_news.concat( data.articles[i].description).concat('...\n\n');
+        
+        reply_news=reply_news.concat( data.articles[i].url).concat('...\n\n');
+  }
+  message.reply(reply_news);
+}
+
+async function NewsItem(message){
+  const news_item=await fetch(
+    `https://newsapi.org/v2/everything?q=${message}&apiKey=${news_api}`
+  );
+
+  const data = await news_item.json();
+  let reply_news="";
+    console.log(data);
+  for( let i=0;i<5;i++){
+    reply_news=reply_news.concat(`${i+1}: `);
+
+    if( data.articles[i].description!=null)
+        reply_news=reply_news.concat( data.articles[i].description).concat('...\n\n');
+        
+    reply_news=reply_news.concat( data.articles[i].url).concat('...\n\n');
   }
   message.reply(reply_news);
 }
@@ -107,6 +129,13 @@ bot.on("messageCreate", function (message) {
       else  
           message.reply("Enter a valid command to see News");
   }  
+  else if( argument[0].toLowerCase()=='news-item')
+  {
+      if( argument.length==1)
+        message.reply("Enter a valid command to see News of an Item");
+      else
+        NewsItem(message);
+  }
    else message.reply("Enter a valid command");
 });
 
