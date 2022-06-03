@@ -8,3 +8,6 @@ Personal Assistant like Jarvis on Discord.
 3. Tells News also  
     Command : ! news <country_code>  
     Command : ! news-item <thing_you_want_news_about>
+4. Uses API to tell the candle Stick pattern shown in the stock prices
+    Code of Securities Taken from: https://www.bseindia.com/corporates/List_Scrips.html
+    
