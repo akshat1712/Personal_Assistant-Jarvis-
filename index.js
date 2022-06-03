@@ -411,7 +411,7 @@ bot.on("messageCreate", function (message) {
       else
         NewsItem(message);
   }
-  else if( argument[0].toLowerCase()=='TA')
+  else if( argument[0].toLowerCase()=='ta')
   {
     if( argument.length==1)
       message.reply("Enter a valid command to see analysis of the stock ");
