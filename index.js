@@ -8,6 +8,7 @@ const bot = new Discord.Client({ intents: ["GUILDS", "GUILD_MESSAGES"] }); // Di
 
 const api_weather = config.WEATHER_API_KEY; // Weather API key
 const news_api=config.NEWS_API_KEY; // News API Key
+const equity_api=config.EQUITY_API_KEY;
 const prefix = "!"; // Any command should start with ! to be recongized
 
 
@@ -125,6 +126,237 @@ async function NewsItem(message){
   message.reply(reply_news);
 }
 
+async function Equity_Data(message,code){
+
+  const price_data=await fetch(
+    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${code}.BSE&outputsize=full&apikey=X5V3OWFUH9K0GQMU`
+  )
+  const data = await price_data.json();
+  
+  date_price=data["Time Series (Daily)"];
+
+  let open=[];
+  let close=[];
+  let high=[];
+  let low=[];
+  let volume=[];
+  let days=0;
+  let answer="";
+  Object.keys(date_price).forEach(date =>{
+    day_price=date_price[date];
+
+    days+=1;
+    Object.keys(day_price).forEach(type=>{
+      if( type=='1. open')
+        open.push(day_price[type]);
+      else if( type=='2. high')
+        high.push(day_price[type]);
+      else if( type=='3. low')
+        low.push(day_price[type]);
+      else if( type=='4. close')
+        close.push( day_price[type]);
+      else
+        volume.push(day_price[type]);
+    });
+  });
+
+  let candlestick={open,close,high,low,volume,days};
+
+
+  let buy=0;
+  let sell=0;
+  
+  let buy_signal=[];
+  let sell_signal=[];
+
+
+  let Trend=[]
+  
+  let now=0;
+  for( let i=1;i<close.length && i<=250 ;i++)
+  {
+    // For UP TREND
+    if( close[i]>close[i-1])
+    {
+      if( open[i]>open[i-1])
+        now+=2;
+      else
+        now+=1;
+    }
+
+    if( !doji(candlestick) && close[i]>open[i])
+      now+=0.5
+
+    // FOR LOW TREND
+    if( close[i]<close[i-1])
+    {
+      if( open[i]<open[i-1])
+        now-=2;
+      else
+        now-=1;
+    }
+
+    if( !doji(candlestick) && close[i]<open[i])
+      now-=0.5
+    
+    if( i%40==0)
+      Trend.push(now);
+  }
+
+  Trend.push(now);
+
+  Trend.push(0.3);
+
+  // console.log(Trend);
+  answer=answer.concat("Trends from in Increasing order of past: ")
+  for ( let val in Trend)
+    answer=answer.concat(`${Trend[val]} , `);
+  answer=answer.concat("\n");
+
+  if(BullishMarubozu(candlestick))
+  {
+    buy++;
+    buy_signal.push('BULLISH MARUBOZU');
+  }
+
+  if( BearishMarubozu(candlestick))
+  {
+    sell++;
+    sell_signal.push('BEARISH MARUBOZU');
+  }
+
+  if( doji(candlestick))
+  {
+    buy+=0.5;
+    sell+=0.5
+  }
+
+  if( PaperUmbrella(candlestick))
+  {
+    if(Trend[0]<0)
+    {
+      buy+=1;
+      buy_signal.push('HAMMER');
+    }
+    else if( Trend[0]>0)
+    {
+      sell+=1;
+      sell_signal.push("HANGING-MAN")
+    }
+  }
+
+  if( Trend[0]>0 && ShootingStar(candlestick))
+  {
+    sell++;
+    sell_signal.push("SHOOTING STAR");
+  }
+
+  if( Trend[0]<0 && BullishEngulfing(candlestick))
+  {
+    buy++;
+    buy_signal.push("BULLISH ENGULFING");
+  }
+
+  if( Trend[0]>0 && BearishEngulfing(candlestick))
+  {
+    sell++;
+    sell_signal.push("BEARISH ENGULFING");
+  }
+
+  if( Trend[0]<0 && MorningStar(candlestick))
+  {
+    buy++;
+    buy_signal.push(" MORNING STAR");
+  }
+
+  if( Trend[0]>0 && EveningStar( candlestick))
+  {
+    sell++;
+    sell_signal.push(" EVENING STAR");
+  }
+
+  answer=answer.concat(`BUY:${buy}, SELL:${sell}`);
+  answer=answer.concat("\n");
+  answer=answer.concat(`BUY SIGNALS ARE: ${buy_signal}\n`);
+  answer=answer.concat(`SELL SIGNALS ARE: ${sell_signal}\n`);
+  message.reply(answer);
+}
+
+
+function BullishMarubozu(data){
+  if( ( (data.high[0]-data.close[0])/data.high[0] <0.003 ) && ( (data.open[0]-data.low[0])/data.open[0] <0.003 ) )
+    return true;
+}
+
+function BearishMarubozu(data){
+  if( ( (data.high[0]-data.open[0])/data.open[0] <0.003 ) && ( (data.close[0]-data.low[0])/data.close[0] <0.003 ) )
+    return true;
+}
+
+function doji(data){
+  if ( Math.abs( data.open[0]-data.close[0])/data.open[0] <0.003)
+    return true;
+}
+
+function PaperUmbrella(data){
+  if (  ((data.high[0]-data.close[0])/data.close[0] <0.003)  && 2.5*(data.close[0]-data.open[0])<=data.close[0]-data.low[0])
+    return true; 
+}
+
+function ShootingStar(data){
+  if (  ((data.open[0]-data.low[0])/data.open[0] <0.003)  && 2.5*(data.close[0]-data.open[0])<=data.high[0]-data.open[0])
+    return true; 
+}
+
+function BullishEngulfing(data)
+{
+  if( (data.open[0]<data.open[1]) && (data.close[0]>data.close[1]) && ( data.open[0]<data.close[0]) && (data.open[1]>data.close[1]))
+    return true;
+}
+
+function BearishEngulfing(data)
+{
+  if( (data.open[0]>data.open[1]) && (data.close[0]<data.close[1]) && ( data.open[0]>data.close[0]) && (data.open[1]<data.close[1]))
+    return true;
+}
+
+function EveningStar( data)
+{
+  let flag=0;
+  if ( Math.abs( data.open[1]-data.close[1])/data.open[1] <0.003)
+    flag+=1;
+  
+  if( data.open[2]<data.close[2])
+    flag+=1;
+  if( data.open[0]<data.close[1] && data.close[0]<data.open[2] && (data.open[0]-data.close[0])/data.open[0] >0.01)
+    flag+=1;
+  
+
+    if( flag==3)
+      return true;
+    else
+      return false;
+}
+
+function MorningStar( data)
+{
+  let flag=0;
+  if ( Math.abs( data.open[1]-data.close[1])/data.open[1] <0.003)
+    flag+=1;
+  if( data.open[0]>data.close[1] &&  data.close[0]>data.open[2] && (data.close[0]-data.open[0])/data.open[0] >0.01)
+    flag+=1;
+  if (  data.open[2]>data.close[2]  )
+    flag+=1;
+
+    if( flag==3)
+      return true;
+    else
+      return false;  
+
+}
+
+
+
 // When a person puts a message, this is initiated
 bot.on("messageCreate", function (message) {
   if (message.author.bot) return;
@@ -178,6 +410,14 @@ bot.on("messageCreate", function (message) {
         message.reply("Enter a valid command to see News of specified Item");
       else
         NewsItem(message);
+  }
+  else if( argument[0].toLowerCase()=='TA')
+  {
+    if( argument.length==1)
+      message.reply("Enter a valid command to see analysis of the stock ");
+    else
+      Equity_Data(message,argument[1]);
+    
   }
    else message.reply("Enter a valid command");
 });
